@@ -1,0 +1,36 @@
+---
+- name: "test ssh on custom port ({{ pi_custom_ssh_port }})"
+  local_action: wait_for port="{{ pi_custom_ssh_port }}" timeout=2
+  register: pi_debug_ssh_result
+  ignore_errors: true
+
+- debug:
+  msg: "Result was {{ pi_debug_ssh_result }}"
+  tags: 'publishinteractive-debug'
+
+- name: set ansible_ssh_port to default (22)
+  set_fact: ansible_port=22
+  when: pi_debug_ssh_result.failed
+
+- name: "change to custom ssh port ({{ pi_custom_ssh_port }})"
+  sudo: True
+  lineinfile: dest=/etc/ssh/sshd_config
+              regexp="^Port\s"
+              line="Port {{ pi_custom_ssh_port }}"
+              state=present
+
+- debug:
+    msg: 'Host/port variables before SSH restart = {{ ansible_host }} {{ ansible_port }}'
+  tags: 'publishinteractive-debug'
+
+- name: Restart ssh
+  service:
+    name: ssh
+    state: restarted
+
+- name: "set ansible_ssh_port to custom ({{ pi_custom_ssh_port }})"
+  set_fact: ansible_port="{{ pi_custom_ssh_port }}"
+
+- debug:
+    msg: 'Host/port variables at end of play = {{ ansible_host }} {{ ansible_port }}'
+  tags: 'publishinteractive-debug'
