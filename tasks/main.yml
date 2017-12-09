@@ -34,3 +34,17 @@
 - debug:
     msg: 'Host/port variables at end of play = {{ ansible_host }} {{ ansible_port }}'
   tags: 'publishinteractive-debug'
+
+- name: Check .ssh directory
+    file:
+      path: "/home/{{ pi_remote_user }}/.ssh/"
+      state: directory
+      mode: 0740
+      owner: "{{ pi_remote_user }}"
+
+- name: Install ssh public key
+    copy:
+      content: "{{ lookup('file', '{{ pi_key_file_public_src }}') }}"
+      dest: "{{ pi_key_file_public }}"
+      mode: 0644
+      owner: "{{ pi_remote_user }}"
